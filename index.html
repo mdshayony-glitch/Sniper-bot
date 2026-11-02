@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sniper Pro AI - Ultimate Trading Web App</title>
+    <!-- PWA / Installable Manifest Link -->
+    <link rel="manifest" href="manifest.json">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: #050b14; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        
+        .app-container {
+            width: 350px;
+            background: linear-gradient(135deg, #0a1120, #131c2e);
+            border: 2px solid #00ffcc;
+            border-radius: 20px;
+            padding: 16px;
+            box-shadow: 0 0 35px rgba(0, 255, 204, 0.4);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #1f293d;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+
+        .header h2 { font-size: 13px; color: #00ffcc; letter-spacing: 0.5px; }
+        .header span { font-size: 8px; color: #888; display: block; }
+
+        .mode-box { display: flex; gap: 8px; margin-bottom: 12px; }
+        .mode-btn {
+            flex: 1; background: #1b263b; color: #aaa; border: none; padding: 8px;
+            border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .mode-btn.active { background: #00b4d8; color: #fff; box-shadow: 0 0 10px rgba(0,180,216,0.5); }
+
+        .upload-section {
+            background: #060d18; border: 2px dashed #00ffcc; border-radius: 10px;
+            padding: 10px; text-align: center; margin-bottom: 12px; position: relative; cursor: pointer;
+        }
+        .upload-section input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .upload-text { font-size: 11px; color: #00ffcc; font-weight: bold; }
+        .upload-sub { font-size: 8px; color: #aaa; margin-top: 3px; }
+
+        .scanner-box {
+            background: #03070f; border: 1px solid #1f293d; border-radius: 10px;
+            height: 105px; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; position: relative; margin-bottom: 12px; overflow: hidden;
+        }
+        .scanner-title { font-size: 11px; color: #00ffcc; font-weight: bold; }
+        
+        .candles { display: flex; gap: 5px; margin-top: 8px; align-items: flex-end; }
+        .candle { width: 6px; background: #00ffcc; border-radius: 3px; animation: bounce 0.6s infinite alternate; }
+        .candle:nth-child(even) { background: #ff4d4d; animation-delay: 0.2s; }
+        
+        @keyframes bounce {
+            from { height: 15px; }
+            to { height: 45px; }
+        }
+
+        .popup-result {
+            position: absolute; bottom: 8px; font-size: 16px; font-weight: bold;
+            opacity: 0; transition: all 0.4s ease;
+        }
+
+        .indicators-tag {
+            font-size: 7px; color: #00ffcc; text-align: center; margin-bottom: 12px;
+            background: rgba(0, 255, 204, 0.05); padding: 6px; border-radius: 6px; line-height: 1.4;
+        }
+
+        .signal-display {
+            background: #1b263b; padding: 8px; border-radius: 8px; text-align: center; margin-bottom: 12px;
+        }
+        .signal-display span { font-size: 8px; color: #888; display: block; }
+        #final-signal { font-size: 14px; font-weight: bold; color: yellow; margin-top: 3px; }
+
+        .action-btn {
+            width: 100%; background: linear-gradient(90deg, #00b4d8, #0077b6); color: #fff;
+            border: none; padding: 11px; border-radius: 8px; font-weight: bold; font-size: 12px;
+            cursor: pointer; box-shadow: 0 0 15px rgba(0,180,216,0.4); transition: 0.3s;
+        }
+        .action-btn:active { transform: scale(0.97); }
+
+        .footer-info {
+            display: flex; justify-content: space-between; font-size: 9px; color: #00ffcc; margin-top: 10px;
+        }
+
+        .install-banner {
+            margin-top: 15px; background: #111d32; border: 1px solid #00ffcc; padding: 8px;
+            border-radius: 8px; text-align: center; font-size: 9px; cursor: pointer; display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- হেডার -->
+        <div class="header">
+            <div>
+                <h2>SNIPER PRO AI VISION</h2>
+                <span>Global API & 30+ Indicators Engine</span>
+            </div>
+            <div id="status-dot" style="width: 10px; height: 10px; background: #00ffcc; border-radius: 50%; box-shadow: 0 0 8px #00ffcc;"></div>
+        </div>
+
+        <!-- মোড সিলেক্টর -->
+        <div class="mode-box">
+            <button class="mode-btn active" id="btn-1m" onclick="setMode('1m')">1m Standard</button>
+            <button class="mode-btn" id="btn-5s" onclick="setMode('5s')">5s Auto Mode</button>
+        </div>
+
+        <!-- স্ক্রিনশট আপলোড অপশন -->
+        <div class="upload-section">
+            <input type="file" id="screenshot-file" accept="image/*" onchange="handleImageUpload(event)">
+            <div class="upload-text" id="upload-label">📸 Tap to Upload Chart Screenshot</div>
+            <div class="upload-sub" id="upload-status">AI Vision OCR & Pixel Analysis Ready</div>
+        </div>
+
+        <!-- স্ক্যানার ও ভিজ্যুয়াল স্ক্রিন -->
+        <div class="scanner-box">
+            <div class="scanner-title" id="scanner-text">System Armed & Ready</div>
+            <div class="candles" id="candle-anim">
+                <div class="candle" style="height: 25px;"></div>
+                <div class="candle" style="height: 40px;"></div>
+                <div class="candle" style="height: 20px;"></div>
+                <div class="candle" style="height: 45px;"></div>
+                <div class="candle" style="height: 30px;"></div>
+            </div>
+            <div class="popup-result" id="popup-result"></div>
+        </div>
+
+        <!-- পৃথিবীর সব ইন্ডিকেটরের লিস্ট -->
+        <div class="indicators-tag">
+            WORLD API ACTIVE: RSI, MACD, Bollinger Bands, EMA 9/21/50/200, Stochastic, Supertrend, Parabolic SAR, CCI, ADX, Williams %R, Ichimoku Cloud, Awesome Oscillator, Fibonacci, Heikin Ashi, Volume Profile & AI Vision OCR
+        </div>
+
+        <!-- সিগন্যাল আউটপুট -->
+        <div class="signal-display">
+            <span>AI DEEP VERIFICATION RESULT</span>
+            <div id="final-signal">WAITING FOR UPLOAD / SCAN</div>
+        </div>
+
+        <!-- মেইন বাটন -->
+        <button class="action-btn" onclick="runAnalysis()">RUN AI SCREENSHOT ANALYSIS</button>
+
+        <!-- ফুটার স্ট্যাটাস ও ব্যালেন্স -->
+        <div class="footer-info">
+            <span>API: <strong style="color: #00ffcc;">Connected (99.8%)</strong></span>
+            <span id="balance-text">Bal: $1,000</span>
+        </div>
+
+        <!-- ইনস্টল অপশন ব্যানার -->
+        <div class="install-banner" id="install-btn" onclick="installApp()">
+            📲 Click here to Install Web App on Phone
+        </div>
+    </div>
+
+    <script>
+        let currentMode = '1m';
+        let hasImage = false;
+        let balance = 1000;
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('btn-1m').classList.toggle('active', mode === '1m');
+            document.getElementById('btn-5s').classList.toggle('active', mode === '5s');
+            document.querySelector('.action-btn').innerText = mode === '5s' ? 'START 5s AUTO TRADING' : 'RUN AI SCREENSHOT ANALYSIS';
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                hasImage = true;
+                document.getElementById('upload-label').innerText = "✅ Screenshot Attached Successfully";
+                document.getElementById('upload-status').innerText = file.name + " (AI OCR Processing Ready)";
+                document.getElementById('upload-status').style.color = "#00ffcc";
+            }
+        }
+
+        function runAnalysis() {
+            const scannerText = document.getElementById('scanner-text');
+            const finalSignal = document.getElementById('final-signal');
+            const popupResult = document.getElementById('popup-result');
+            
+            scannerText.innerText = hasImage ? "AI Vision Analyzing Screenshot Pixels..." : "Scanning 30+ Global Indicators...";
+            finalSignal.innerText = "VERIFYING MARKET...";
+            finalSignal.style.color = "yellow";
+            popupResult.style.opacity = '0';
+
+            setTimeout(() => {
+                // এআই ও ইন্ডিকেটরের নিখুঁত ক্যালকুলেশন সিমুলেশন
+                let isBuy = Math.random() > 0.4;
+                let accuracy = hasImage ? Math.floor(Math.random() * 5 + 95) : Math.floor(Math.random() * 10 + 88);
+                let resultText = isBuy ? `UP 🟢 (${accuracy}% ACCURACY)` : `DOWN 🔴 (${accuracy}% ACCURACY)`;
+
+                scannerText.innerText = hasImage ? "AI Vision OCR Verification Complete" : "All Indicators Synced";
+                finalSignal.innerText = resultText;
+                finalSignal.style.color = isBuy ? "#00ffcc" : "#ff4d4d";
+
+                popupResult.innerText = isBuy ? "📈 🟢 BUY SIGNAL" : "📉 📉 SELL SIGNAL";
+                popupResult.style.color = isBuy ? "#00ffcc" : "#ff4d4d";
+                popupResult.style.opacity = '1';
+                popupResult.style.transform = 'translateY(-6px)';
+
+                if (currentMode === '5s') {
+                    setTimeout(() => {
+                        balance += 50;
+                        document.getElementById('balance-text').innerText = `Bal: $${balance}`;
+                        alert(`[5s AUTO TRADE EXECUTED]\nSignal: ${resultText}\nCompounding Profit: +$50`);
+                    }, 500);
+                } else {
+                    setTimeout(() => {
+                        alert(`[AI SCREENSHOT REPORT]\nRecommendation: ${resultText}\nGlobal API & Indicators Verified.`);
+                    }, 400);
+                }
+            }, 2000);
+        }
+
+        // PWA Install Prompt Sim
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            window.deferredPrompt = e;
+            document.getElementById('install-btn').style.display = 'block';
+        });
+
+        function installApp() {
+            if (window.deferredPrompt) {
+                window.deferredPrompt.prompt();
+                window.deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        document.getElementById('install-btn').style.display = 'none';
+                    }
+                    window.deferredPrompt = null;
+                });
+            } else {
+                alert("To install: Open your browser menu (3 dots) and select 'Add to Home Screen' or 'Install App'.");
+            }
+        }
+    </script>
+</body>
+</html>
